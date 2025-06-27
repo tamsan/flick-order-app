@@ -11,6 +11,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>居酒屋注文システム</title>
     <style>
+        /* 左側の不要なコード表示を隠す */
+        .hidden, .active-cell { 
+            display: none !important; 
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -408,7 +413,7 @@
             } else if (orderStatus === 'editing') {
                 confirmSection.innerHTML = `
                     <button class="confirm-btn" id="save-changes">変更保存</button>
-                    <button class="cancel-btn" id="cancel-edit">キャンセル</button>
+                    <button class="edit-btn" id="edit-btn">変更・取消</button>
                 `;
             }
             
@@ -623,12 +628,6 @@
             if (saveBtn) {
                 saveBtn.addEventListener('click', handleSaveChanges);
             }
-            
-            // キャンセルボタン
-            const cancelBtn = document.getElementById('cancel-edit');
-            if (cancelBtn) {
-                cancelBtn.addEventListener('click', handleCancelEdit);
-            }
         }
 
         // 注文確定処理
@@ -667,12 +666,13 @@
             saveOrderHistory(currentOrderData);
             updateOrderStatus('confirmed');
             
-            alert(`テーブル${tableNumber}の注文を確定しました！\n合計: ${currentOrderData.totalAmount}円`);
+            // 座席は保持、アラートは簡素化
+            console.log(`テーブル${tableNumber}の注文を確定しました！\n合計: ${currentOrderData.totalAmount}円`);
         }
 
         // 再注文処理
         function handleReorder() {
-            // テーブルをクリアして新しい注文を開始
+            // テーブルをクリアして新しい注文を開始（座席は保持）
             selectedItems = new Array(8).fill(null);
             document.querySelectorAll('.name-input').forEach(input => {
                 input.value = '';
@@ -716,9 +716,18 @@
                 const qtyInput = document.querySelector(`.qty-input[data-row="${index}"]`);
                 const priceCell = document.getElementById(`price-${index}`);
                 
-                nameInput.classList.add('cancelled-item');
-                qtyInput.classList.add('cancelled-item');
-                priceCell.classList.add('cancelled-item');
+                nameInput.style.textDecoration = 'line-through';
+                nameInput.style.color = '#999';
+                qtyInput.style.textDecoration = 'line-through';
+                qtyInput.style.color = '#999';
+                priceCell.style.textDecoration = 'line-through';
+                priceCell.style.color = '#999';
+                
+                // 取消リンクを削除
+                const cancelLink = priceCell.querySelector('.cancel-link');
+                if (cancelLink) {
+                    cancelLink.remove();
+                }
                 
                 // 合計を再計算
                 updateTotal();
