@@ -1,21 +1,10 @@
-.hidden {
-            display: none;
-        }
-
-        .active-cell {
-            background: #fff !important;
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>居酒屋注文システム</title>
     <style>
-        /* 左側の不要なコード表示を隠す */
-        .hidden, .active-cell { 
-            display: none !important; 
-        }
-        
         * {
             margin: 0;
             padding: 0;
@@ -64,7 +53,6 @@
             background: white;
         }
 
-        /* チビ伝テーブル */
         .order-table {
             width: 100%;
             border-collapse: collapse;
@@ -167,6 +155,46 @@
             color: #333;
         }
 
+        .order-history {
+            margin: 15px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-header {
+            background: #f0f0f0;
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .history-content {
+            padding: 10px;
+        }
+
+        .history-order {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .history-order-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #8B4513;
+        }
+
+        .history-item {
+            margin: 2px 0;
+            color: #666;
+        }
+
         .confirm-section {
             text-align: center;
             margin-top: 20px;
@@ -219,6 +247,15 @@
         .disabled-input {
             background: #f5f5f5 !important;
             color: #666;
+        }
+
+        .confirmed-table {
+            background-color: #F0F0F0 !important;
+        }
+
+        .confirmed-input {
+            background: #F0F0F0 !important;
+            color: #666 !important;
         }
     </style>
 </head>
@@ -328,13 +365,17 @@
             合計　<span id="total-amount">0</span>円
         </div>
 
+        <div class="order-history" id="order-history" style="display: none;">
+            <div class="history-header">注文履歴</div>
+            <div class="history-content" id="history-content"></div>
+        </div>
+
         <div class="confirm-section">
             <button class="confirm-btn" id="confirm-order">注文</button>
         </div>
     </div>
 
     <script>
-        // サンプルメニューデータ（30件に拡張）
         const menuData = [
             { name: "ビールアサヒ", price: 600, kana: "びーるあさひ" },
             { name: "キリンビール", price: 600, kana: "きりんびーる" },
@@ -369,17 +410,15 @@
         ];
 
         let selectedItems = new Array(8).fill(null);
-        let orderStatus = 'new'; // 'new', 'confirmed', 'editing'
-        let confirmedOrders = []; // 確定済み注文
-        let currentOrderData = null; // 現在の注文データ
+        let orderStatus = 'new';
+        let confirmedOrders = [];
+        let currentOrderData = null;
 
-        // ローカルストレージから注文履歴を読み込み
         function loadOrderHistory() {
             const saved = localStorage.getItem('orderHistory');
             return saved ? JSON.parse(saved) : [];
         }
 
-        // ローカルストレージに注文履歴を保存
         function saveOrderHistory(orderData) {
             const history = loadOrderHistory();
             history.push({
@@ -388,16 +427,65 @@
                 id: Date.now()
             });
             localStorage.setItem('orderHistory', JSON.stringify(history));
+            displayOrderHistory();
         }
 
-        // 注文状態の変更とUI更新
+        function displayOrderHistory() {
+            const historyArea = document.getElementById('order-history');
+            const historyContent = document.getElementById('history-content');
+            const history = loadOrderHistory();
+            
+            if (history.length === 0) {
+                historyArea.style.display = 'none';
+                return;
+            }
+            
+            historyArea.style.display = 'block';
+            historyContent.innerHTML = '';
+            
+            const recentHistory = history.slice(-3).reverse();
+            
+            recentHistory.forEach((order, index) => {
+                const orderDiv = document.createElement('div');
+                orderDiv.className = 'history-order';
+                
+                const date = new Date(order.timestamp);
+                const timeStr = date.toLocaleTimeString('ja-JP', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                let itemsHtml = '';
+                order.orders.forEach(item => {
+                    if (!item.cancelled) {
+                        itemsHtml += `<div class="history-item">${item.name} × ${item.quantity}</div>`;
+                    }
+                });
+                
+                orderDiv.innerHTML = `
+                    <div class="history-order-header">
+                        ${timeStr} - テーブル${order.tableNumber} - ${order.totalAmount}円
+                    </div>
+                    ${itemsHtml}
+                `;
+                
+                historyContent.appendChild(orderDiv);
+            });
+        }
+
+        // 履歴クリア機能
+        function clearOrderHistory() {
+            localStorage.removeItem('orderHistory');
+            displayOrderHistory();
+            console.log('注文履歴をクリアしました');
+        }
+
         function updateOrderStatus(newStatus) {
             orderStatus = newStatus;
             updateButtonsUI();
             updateTableUI();
         }
 
-        // ボタンUIの更新
         function updateButtonsUI() {
             const confirmSection = document.querySelector('.confirm-section');
             
@@ -417,24 +505,20 @@
                 `;
             }
             
-            // イベントリスナーを再設定
             setupButtonEventListeners();
         }
 
-        // テーブルUIの更新
         function updateTableUI() {
             const tableElement = document.querySelector('.order-table');
             
             if (orderStatus === 'confirmed') {
                 tableElement.classList.add('confirmed-table');
-                // 入力を無効化
                 document.querySelectorAll('.editable-cell').forEach(input => {
                     input.disabled = true;
                     input.classList.add('confirmed-input');
                 });
             } else {
                 tableElement.classList.remove('confirmed-table');
-                // 入力を有効化
                 document.querySelectorAll('.editable-cell').forEach(input => {
                     input.disabled = false;
                     input.classList.remove('confirmed-input');
@@ -442,7 +526,6 @@
             }
         }
 
-        // 各行の品名入力にイベントリスナーを追加
         document.querySelectorAll('.name-input').forEach((input, index) => {
             input.addEventListener('input', function() {
                 handleNameInput(this, index);
@@ -454,21 +537,17 @@
 
             input.addEventListener('blur', function() {
                 this.style.backgroundColor = '';
-                // 候補選択のための遅延
                 setTimeout(() => {
                     hideSuggestions(index);
                 }, 150);
             });
         });
 
-        // 各行の数量入力にイベントリスナーを追加
         document.querySelectorAll('.qty-input').forEach((input, index) => {
             input.addEventListener('input', function() {
-                // 全角数字を半角に変換
                 let value = this.value.replace(/[０-９]/g, function(s) {
                     return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
                 });
-                // 数字以外を除去
                 value = value.replace(/[^0-9]/g, '');
                 this.value = value;
                 updateRowPrice(index);
@@ -482,6 +561,58 @@
                 this.style.backgroundColor = '';
             });
         });
+
+        function hideSuggestions(rowIndex) {
+            const suggestionsDiv = document.getElementById(`suggestions-${rowIndex}`);
+            if (suggestionsDiv) {
+                suggestionsDiv.classList.remove('show');
+            }
+        }
+
+        function showSuggestions(rowIndex) {
+            const suggestionsDiv = document.getElementById(`suggestions-${rowIndex}`);
+            if (suggestionsDiv) {
+                suggestionsDiv.classList.add('show');
+            }
+        }
+
+        function displaySuggestions(items, rowIndex) {
+            const suggestionsDiv = document.getElementById(`suggestions-${rowIndex}`);
+            if (!suggestionsDiv) return;
+            
+            suggestionsDiv.innerHTML = '';
+            
+            items.forEach(item => {
+                const suggestionElement = document.createElement('div');
+                suggestionElement.className = 'suggestion-item';
+                suggestionElement.innerHTML = `
+                    <span>${item.name}</span>
+                    <span>¥${item.price}</span>
+                `;
+                
+                suggestionElement.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    selectMenuItem(item, rowIndex);
+                });
+                
+                suggestionsDiv.appendChild(suggestionElement);
+            });
+        }
+
+        function selectMenuItem(item, rowIndex) {
+            const nameInput = document.querySelector(`.name-input[data-row="${rowIndex}"]`);
+            const qtyInput = document.querySelector(`.qty-input[data-row="${rowIndex}"]`);
+            
+            if (!nameInput || !qtyInput) return;
+            
+            nameInput.value = item.name;
+            selectedItems[rowIndex] = item;
+            
+            hideSuggestions(rowIndex);
+            updateRowPrice(rowIndex);
+            
+            qtyInput.focus();
+        }
 
         function handleNameInput(input, rowIndex) {
             const query = input.value.toLowerCase().trim();
@@ -507,62 +638,6 @@
             }
         }
 
-        // 候補非表示の関数
-        function hideSuggestions(rowIndex) {
-            const suggestionsDiv = document.getElementById(`suggestions-${rowIndex}`);
-            if (suggestionsDiv) {
-                suggestionsDiv.classList.remove('show');
-            }
-        }
-
-        // 候補表示の関数
-        function showSuggestions(rowIndex) {
-            const suggestionsDiv = document.getElementById(`suggestions-${rowIndex}`);
-            if (suggestionsDiv) {
-                suggestionsDiv.classList.add('show');
-            }
-        }
-
-        function displaySuggestions(items, rowIndex) {
-            const suggestionsDiv = document.getElementById(`suggestions-${rowIndex}`);
-            if (!suggestionsDiv) return;
-            
-            suggestionsDiv.innerHTML = '';
-            
-            items.forEach(item => {
-                const suggestionElement = document.createElement('div');
-                suggestionElement.className = 'suggestion-item';
-                suggestionElement.innerHTML = `
-                    <span>${item.name}</span>
-                    <span>¥${item.price}</span>
-                `;
-                
-                // クリックで選択
-                suggestionElement.addEventListener('mousedown', function(e) {
-                    e.preventDefault();
-                    selectMenuItem(item, rowIndex);
-                });
-                
-                suggestionsDiv.appendChild(suggestionElement);
-            });
-        }
-
-        function selectMenuItem(item, rowIndex) {
-            const nameInput = document.querySelector(`.name-input[data-row="${rowIndex}"]`);
-            const qtyInput = document.querySelector(`.qty-input[data-row="${rowIndex}"]`);
-            
-            if (!nameInput || !qtyInput) return;
-            
-            nameInput.value = item.name;
-            selectedItems[rowIndex] = item;
-            
-            hideSuggestions(rowIndex);
-            updateRowPrice(rowIndex);
-            
-            // 数量入力にフォーカス
-            qtyInput.focus();
-        }
-
         function updateRowPrice(rowIndex) {
             const qtyInput = document.querySelector(`.qty-input[data-row="${rowIndex}"]`);
             const priceCell = document.getElementById(`price-${rowIndex}`);
@@ -583,7 +658,6 @@
                 const qtyInput = document.querySelector(`.qty-input[data-row="${i}"]`);
                 const priceCell = document.getElementById(`price-${i}`);
                 
-                // 取り消された商品は合計から除外
                 if (selectedItems[i] && qtyInput.value && !isNaN(qtyInput.value) && qtyInput.value > 0 && !priceCell.classList.contains('cancelled-item')) {
                     total += selectedItems[i].price * parseInt(qtyInput.value);
                 }
@@ -591,46 +665,28 @@
             document.getElementById('total-amount').textContent = total.toLocaleString();
         }
 
-        // グローバル関数として定義（HTML内のonclickから呼び出せるように）
-        window.cancelOrderItem = cancelOrderItem;
-
-        // 初期化処理
-        function initializeApp() {
-            setupButtonEventListeners();
-            updateOrderStatus('new');
-        }
-
-        // ページ読み込み完了時に初期化
-        document.addEventListener('DOMContentLoaded', initializeApp);
-
-        // ボタンイベントリスナーの設定
         function setupButtonEventListeners() {
-            // 注文ボタン
             const confirmBtn = document.getElementById('confirm-order');
             if (confirmBtn) {
                 confirmBtn.addEventListener('click', handleOrderConfirm);
             }
             
-            // 再注文ボタン
             const reorderBtn = document.getElementById('reorder-btn');
             if (reorderBtn) {
                 reorderBtn.addEventListener('click', handleReorder);
             }
             
-            // 変更・取消ボタン
             const editBtn = document.getElementById('edit-btn');
             if (editBtn) {
                 editBtn.addEventListener('click', handleEdit);
             }
             
-            // 変更保存ボタン
             const saveBtn = document.getElementById('save-changes');
             if (saveBtn) {
                 saveBtn.addEventListener('click', handleSaveChanges);
             }
         }
 
-        // 注文確定処理
         function handleOrderConfirm() {
             const tableNumber = document.getElementById('table-select').value;
             if (!tableNumber) {
@@ -656,7 +712,6 @@
                 return;
             }
 
-            // 注文データを保存
             currentOrderData = {
                 tableNumber: tableNumber,
                 orders: orders,
@@ -666,35 +721,58 @@
             saveOrderHistory(currentOrderData);
             updateOrderStatus('confirmed');
             
-            // 座席は保持、アラートは簡素化
             console.log(`テーブル${tableNumber}の注文を確定しました！\n合計: ${currentOrderData.totalAmount}円`);
         }
 
-        // 再注文処理
         function handleReorder() {
-            // テーブルをクリアして新しい注文を開始（座席は保持）
+            // 選択アイテムをクリア
             selectedItems = new Array(8).fill(null);
+            
+            // 入力フィールドをクリア・有効化
             document.querySelectorAll('.name-input').forEach(input => {
                 input.value = '';
                 input.disabled = false;
+                // 取り消し線とスタイルをクリア
+                input.style.textDecoration = '';
+                input.style.color = '';
             });
+            
             document.querySelectorAll('.qty-input').forEach(input => {
                 input.value = '';
                 input.disabled = false;
+                // 取り消し線とスタイルをクリア
+                input.style.textDecoration = '';
+                input.style.color = '';
             });
-            document.querySelectorAll('[id^="price-"]').forEach(cell => cell.textContent = '');
+            
+            // 価格セルをクリア
+            document.querySelectorAll('[id^="price-"]').forEach(cell => {
+                cell.textContent = '';
+                // 取り消し線とスタイルをクリア
+                cell.style.textDecoration = '';
+                cell.style.color = '';
+                // 取消リンクも削除
+                const cancelLink = cell.querySelector('.cancel-link');
+                if (cancelLink) {
+                    cancelLink.remove();
+                }
+            });
+            
+            // 合計をリセット
             updateTotal();
+            
+            // 注文データをクリア
+            currentOrderData = null;
+            
+            // 新規注文状態に戻す
             updateOrderStatus('new');
         }
 
-        // 変更・取消処理
         function handleEdit() {
             updateOrderStatus('editing');
-            // 取消リンクを表示
             showCancelLinks();
         }
 
-        // 取消リンクの表示
         function showCancelLinks() {
             if (!currentOrderData) return;
             
@@ -706,12 +784,10 @@
             });
         }
 
-        // 個別商品の取消
         function cancelOrderItem(index) {
             if (currentOrderData && currentOrderData.orders[index]) {
                 currentOrderData.orders[index].cancelled = true;
                 
-                // 取り消し線を表示
                 const nameInput = document.querySelector(`.name-input[data-row="${index}"]`);
                 const qtyInput = document.querySelector(`.qty-input[data-row="${index}"]`);
                 const priceCell = document.getElementById(`price-${index}`);
@@ -723,37 +799,62 @@
                 priceCell.style.textDecoration = 'line-through';
                 priceCell.style.color = '#999';
                 
-                // 取消リンクを削除
                 const cancelLink = priceCell.querySelector('.cancel-link');
                 if (cancelLink) {
                     cancelLink.remove();
                 }
                 
-                // 合計を再計算
                 updateTotal();
             }
         }
 
-        // 変更保存処理
         function handleSaveChanges() {
-            // 変更内容をローカルストレージに保存
+            // 取消リンクを削除
+            document.querySelectorAll('.cancel-link').forEach(link => link.remove());
+            
             if (currentOrderData) {
                 saveOrderHistory(currentOrderData);
             }
             updateOrderStatus('confirmed');
-            alert('変更を保存しました');
+            console.log('変更を保存しました');
         }
 
-        // 編集キャンセル処理
-        function handleCancelEdit() {
-            // 取消リンクを削除
-            document.querySelectorAll('.cancel-link').forEach(link => link.remove());
-            // 取り消し線を削除
-            document.querySelectorAll('.cancelled-item').forEach(item => {
-                item.classList.remove('cancelled-item');
-            });
-            updateOrderStatus('confirmed');
+        function initializeApp() {
+            setupButtonEventListeners();
+            setupTableChangeListener(); // テーブル変更監視を追加
+            updateOrderStatus('new');
+            displayOrderHistory();
         }
+
+        // テーブル選択変更の監視
+        function setupTableChangeListener() {
+            const tableSelect = document.getElementById('table-select');
+            let previousTable = tableSelect.value;
+            
+            tableSelect.addEventListener('change', function() {
+                const currentTable = this.value;
+                
+                // テーブルが変更された場合（空から選択も含む）
+                if (currentTable !== previousTable && currentTable !== '') {
+                    clearOrderHistory();
+                    console.log(`テーブル${currentTable}に変更しました。履歴をクリアしました。`);
+                }
+                
+                previousTable = currentTable;
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            document.querySelectorAll('.suggestions').forEach((suggestion, index) => {
+                if (!suggestion.parentElement.contains(e.target)) {
+                    hideSuggestions(index);
+                }
+            });
+        });
+
+        window.cancelOrderItem = cancelOrderItem;
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
 </html>
