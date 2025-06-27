@@ -1,4 +1,10 @@
-<!DOCTYPE html>
+.hidden {
+            display: none;
+        }
+
+        .active-cell {
+            background: #fff !important;
+        }<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -79,6 +85,7 @@
         .col-name {
             width: 50%;
             cursor: text;
+            position: relative;
         }
 
         .col-qty {
@@ -118,11 +125,16 @@
             left: 0;
             right: 0;
             background: white;
-            border: 2px solid #333;
-            max-height: 150px;
+            border: 1px solid #999;
+            max-height: 120px;
             overflow-y: auto;
-            z-index: 100;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            display: none;
+        }
+
+        .suggestions.show {
+            display: block;
         }
 
         .suggestion-item {
@@ -170,12 +182,38 @@
             border-color: #A0522D;
         }
 
-        .hidden {
-            display: none;
+        .edit-btn, .cancel-btn {
+            background: #666;
+            color: white;
+            border: 2px solid #666;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-left: 10px;
         }
 
-        .active-cell {
-            background: #fff !important;
+        .edit-btn:hover, .cancel-btn:hover {
+            background: #555;
+            border-color: #555;
+        }
+
+        .cancelled-item {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .cancel-link {
+            font-size: 10px;
+            color: #d32f2f;
+            text-decoration: underline;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .disabled-input {
+            background: #f5f5f5 !important;
+            color: #666;
         }
     </style>
 </head>
@@ -201,80 +239,80 @@
                 <tr>
                     <td class="col-name">
                         <input type="text" class="editable-cell name-input" placeholder="" data-row="0">
-                        <div class="suggestions hidden" id="suggestions-0"></div>
+                        <div class="suggestions" id="suggestions-0"></div>
                     </td>
                     <td class="col-qty">
-                        <input type="number" class="editable-cell qty-input" min="1" value="" data-row="0">
+                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="0">
                     </td>
                     <td class="col-price" id="price-0"></td>
                 </tr>
                 <tr>
                     <td class="col-name">
                         <input type="text" class="editable-cell name-input" placeholder="" data-row="1">
-                        <div class="suggestions hidden" id="suggestions-1"></div>
+                        <div class="suggestions" id="suggestions-1"></div>
                     </td>
                     <td class="col-qty">
-                        <input type="number" class="editable-cell qty-input" min="1" value="" data-row="1">
+                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="1">
                     </td>
                     <td class="col-price" id="price-1"></td>
                 </tr>
                 <tr>
                     <td class="col-name">
                         <input type="text" class="editable-cell name-input" placeholder="" data-row="2">
-                        <div class="suggestions hidden" id="suggestions-2"></div>
+                        <div class="suggestions" id="suggestions-2"></div>
                     </td>
                     <td class="col-qty">
-                        <input type="number" class="editable-cell qty-input" min="1" value="" data-row="2">
+                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="2">
                     </td>
                     <td class="col-price" id="price-2"></td>
                 </tr>
                 <tr>
                     <td class="col-name">
                         <input type="text" class="editable-cell name-input" placeholder="" data-row="3">
-                        <div class="suggestions hidden" id="suggestions-3"></div>
+                        <div class="suggestions" id="suggestions-3"></div>
                     </td>
                     <td class="col-qty">
-                        <input type="number" class="editable-cell qty-input" min="1" value="" data-row="3">
+                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="3">
                     </td>
                     <td class="col-price" id="price-3"></td>
                 </tr>
                 <tr>
                     <td class="col-name">
                         <input type="text" class="editable-cell name-input" placeholder="" data-row="4">
-                        <div class="suggestions hidden" id="suggestions-4"></div>
+                        <div class="suggestions" id="suggestions-4"></div>
                     </td>
                     <td class="col-qty">
-                        <input type="number" class="editable-cell qty-input" min="1" value="" data-row="4">
+                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="4">
                     </td>
                     <td class="col-price" id="price-4"></td>
                 </tr>
                 <tr>
                     <td class="col-name">
                         <input type="text" class="editable-cell name-input" placeholder="" data-row="5">
-                        <div class="suggestions hidden" id="suggestions-5"></div>
+                        <div class="suggestions" id="suggestions-5"></div>
                     </td>
                     <td class="col-qty">
-                        <input type="number" class="editable-cell qty-input" min="1" value="" data-row="5">
+                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="5">
                     </td>
                     <td class="col-price" id="price-5"></td>
                 </tr>
                 <tr>
                     <td class="col-name">
                         <input type="text" class="editable-cell name-input" placeholder="" data-row="6">
-                        <div class="suggestions hidden" id="suggestions-6"></div>
+                        <div class="suggestions" id="suggestions-6"></div>
                     </td>
                     <td class="col-qty">
-                        <input type="number" class="editable-cell qty-input" min="1" value="" data-row="6">
+                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="6">
                     </td>
                     <td class="col-price" id="price-6"></td>
                 </tr>
                 <tr>
                     <td class="col-name">
                         <input type="text" class="editable-cell name-input" placeholder="" data-row="7">
-                        <div class="suggestions hidden" id="suggestions-7"></div>
+                        <div class="suggestions" id="suggestions-7"></div>
                     </td>
                     <td class="col-qty">
-                        <input type="number" class="editable-cell qty-input" min="1" value="" data-row="7">
+                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="7">
                     </td>
                     <td class="col-price" id="price-7"></td>
                 </tr>
@@ -291,14 +329,21 @@
     </div>
 
     <script>
-        // サンプルメニューデータ
+        // サンプルメニューデータ（30件に拡張）
         const menuData = [
             { name: "ビールアサヒ", price: 600, kana: "びーるあさひ" },
             { name: "キリンビール", price: 600, kana: "きりんびーる" },
             { name: "生ビール", price: 500, kana: "なまびーる" },
+            { name: "ハイボール", price: 550, kana: "はいぼーる" },
+            { name: "焼酎ハイ", price: 500, kana: "しょうちゅうはい" },
+            { name: "日本酒", price: 700, kana: "にほんしゅ" },
+            { name: "ワイン赤", price: 800, kana: "わいんあか" },
+            { name: "ワイン白", price: 800, kana: "わいんしろ" },
             { name: "豚角煮", price: 1200, kana: "ぶたかくに" },
             { name: "三元豚の天ぷら", price: 900, kana: "さんげんぶたのてんぷら" },
             { name: "豚しょうが焼き", price: 850, kana: "ぶたしょうがやき" },
+            { name: "牛すじ煮込み", price: 950, kana: "ぎゅうすじにこみ" },
+            { name: "鶏の唐揚げ", price: 700, kana: "とりのからあげ" },
             { name: "枝豆", price: 400, kana: "えだまめ" },
             { name: "エイヒレ", price: 600, kana: "えいひれ" },
             { name: "えのきバター", price: 500, kana: "えのきばたー" },
@@ -308,16 +353,89 @@
             { name: "しらす和え", price: 650, kana: "しらすあえ" },
             { name: "しゅんの魚", price: 1200, kana: "しゅんのさかな" },
             { name: "刺身盛り合わせ", price: 1500, kana: "さしみもりあわせ" },
-            { name: "唐揚げ", price: 700, kana: "からあげ" },
+            { name: "マグロ刺身", price: 1000, kana: "まぐろさしみ" },
+            { name: "サーモン刺身", price: 900, kana: "さーもんさしみ" },
             { name: "やきとり", price: 200, kana: "やきとり" },
             { name: "焼き魚", price: 900, kana: "やきざかな" },
             { name: "サラダ", price: 500, kana: "さらだ" },
             { name: "冷奴", price: 400, kana: "ひややっこ" },
             { name: "タコの天ぷら", price: 1000, kana: "たこのてんぷら" },
-            { name: "アサヒビール", price: 600, kana: "あさひびーる" }
+            { name: "いかの塩辛", price: 550, kana: "いかのしおから" }
         ];
 
         let selectedItems = new Array(8).fill(null);
+        let orderStatus = 'new'; // 'new', 'confirmed', 'editing'
+        let confirmedOrders = []; // 確定済み注文
+        let currentOrderData = null; // 現在の注文データ
+
+        // ローカルストレージから注文履歴を読み込み
+        function loadOrderHistory() {
+            const saved = localStorage.getItem('orderHistory');
+            return saved ? JSON.parse(saved) : [];
+        }
+
+        // ローカルストレージに注文履歴を保存
+        function saveOrderHistory(orderData) {
+            const history = loadOrderHistory();
+            history.push({
+                ...orderData,
+                timestamp: new Date().toISOString(),
+                id: Date.now()
+            });
+            localStorage.setItem('orderHistory', JSON.stringify(history));
+        }
+
+        // 注文状態の変更とUI更新
+        function updateOrderStatus(newStatus) {
+            orderStatus = newStatus;
+            updateButtonsUI();
+            updateTableUI();
+        }
+
+        // ボタンUIの更新
+        function updateButtonsUI() {
+            const confirmSection = document.querySelector('.confirm-section');
+            
+            if (orderStatus === 'new') {
+                confirmSection.innerHTML = `
+                    <button class="confirm-btn" id="confirm-order">注文</button>
+                `;
+            } else if (orderStatus === 'confirmed') {
+                confirmSection.innerHTML = `
+                    <button class="confirm-btn" id="reorder-btn">再注文</button>
+                    <button class="edit-btn" id="edit-btn">変更・取消</button>
+                `;
+            } else if (orderStatus === 'editing') {
+                confirmSection.innerHTML = `
+                    <button class="confirm-btn" id="save-changes">変更保存</button>
+                    <button class="cancel-btn" id="cancel-edit">キャンセル</button>
+                `;
+            }
+            
+            // イベントリスナーを再設定
+            setupButtonEventListeners();
+        }
+
+        // テーブルUIの更新
+        function updateTableUI() {
+            const tableElement = document.querySelector('.order-table');
+            
+            if (orderStatus === 'confirmed') {
+                tableElement.classList.add('confirmed-table');
+                // 入力を無効化
+                document.querySelectorAll('.editable-cell').forEach(input => {
+                    input.disabled = true;
+                    input.classList.add('confirmed-input');
+                });
+            } else {
+                tableElement.classList.remove('confirmed-table');
+                // 入力を有効化
+                document.querySelectorAll('.editable-cell').forEach(input => {
+                    input.disabled = false;
+                    input.classList.remove('confirmed-input');
+                });
+            }
+        }
 
         // 各行の品名入力にイベントリスナーを追加
         document.querySelectorAll('.name-input').forEach((input, index) => {
@@ -326,38 +444,45 @@
             });
 
             input.addEventListener('focus', function() {
-                this.parentElement.classList.add('active-cell');
+                this.style.backgroundColor = '#fff';
             });
 
             input.addEventListener('blur', function() {
-                this.parentElement.classList.remove('active-cell');
+                this.style.backgroundColor = '';
+                // 候補選択のための遅延
                 setTimeout(() => {
-                    document.getElementById(`suggestions-${index}`).classList.add('hidden');
-                }, 200);
+                    hideSuggestions(index);
+                }, 150);
             });
         });
 
         // 各行の数量入力にイベントリスナーを追加
         document.querySelectorAll('.qty-input').forEach((input, index) => {
             input.addEventListener('input', function() {
+                // 全角数字を半角に変換
+                let value = this.value.replace(/[０-９]/g, function(s) {
+                    return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+                });
+                // 数字以外を除去
+                value = value.replace(/[^0-9]/g, '');
+                this.value = value;
                 updateRowPrice(index);
             });
 
             input.addEventListener('focus', function() {
-                this.parentElement.classList.add('active-cell');
+                this.style.backgroundColor = '#fff';
             });
 
             input.addEventListener('blur', function() {
-                this.parentElement.classList.remove('active-cell');
+                this.style.backgroundColor = '';
             });
         });
 
         function handleNameInput(input, rowIndex) {
-            const query = input.value.toLowerCase();
-            const suggestionsDiv = document.getElementById(`suggestions-${rowIndex}`);
+            const query = input.value.toLowerCase().trim();
 
             if (query.length === 0) {
-                suggestionsDiv.classList.add('hidden');
+                hideSuggestions(rowIndex);
                 selectedItems[rowIndex] = null;
                 updateRowPrice(rowIndex);
                 return;
@@ -369,16 +494,34 @@
 
             if (filteredItems.length > 0) {
                 displaySuggestions(filteredItems, rowIndex);
-                suggestionsDiv.classList.remove('hidden');
+                showSuggestions(rowIndex);
             } else {
-                suggestionsDiv.classList.add('hidden');
+                hideSuggestions(rowIndex);
                 selectedItems[rowIndex] = null;
                 updateRowPrice(rowIndex);
             }
         }
 
+        // 候補非表示の関数
+        function hideSuggestions(rowIndex) {
+            const suggestionsDiv = document.getElementById(`suggestions-${rowIndex}`);
+            if (suggestionsDiv) {
+                suggestionsDiv.classList.remove('show');
+            }
+        }
+
+        // 候補表示の関数
+        function showSuggestions(rowIndex) {
+            const suggestionsDiv = document.getElementById(`suggestions-${rowIndex}`);
+            if (suggestionsDiv) {
+                suggestionsDiv.classList.add('show');
+            }
+        }
+
         function displaySuggestions(items, rowIndex) {
             const suggestionsDiv = document.getElementById(`suggestions-${rowIndex}`);
+            if (!suggestionsDiv) return;
+            
             suggestionsDiv.innerHTML = '';
             
             items.forEach(item => {
@@ -388,7 +531,13 @@
                     <span>${item.name}</span>
                     <span>¥${item.price}</span>
                 `;
-                suggestionElement.addEventListener('mousedown', () => selectMenuItem(item, rowIndex));
+                
+                // クリックで選択
+                suggestionElement.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    selectMenuItem(item, rowIndex);
+                });
+                
                 suggestionsDiv.appendChild(suggestionElement);
             });
         }
@@ -397,22 +546,23 @@
             const nameInput = document.querySelector(`.name-input[data-row="${rowIndex}"]`);
             const qtyInput = document.querySelector(`.qty-input[data-row="${rowIndex}"]`);
             
+            if (!nameInput || !qtyInput) return;
+            
             nameInput.value = item.name;
             selectedItems[rowIndex] = item;
             
-            if (!qtyInput.value) {
-                qtyInput.value = 1;
-            }
-            
-            document.getElementById(`suggestions-${rowIndex}`).classList.add('hidden');
+            hideSuggestions(rowIndex);
             updateRowPrice(rowIndex);
+            
+            // 数量入力にフォーカス
+            qtyInput.focus();
         }
 
         function updateRowPrice(rowIndex) {
             const qtyInput = document.querySelector(`.qty-input[data-row="${rowIndex}"]`);
             const priceCell = document.getElementById(`price-${rowIndex}`);
             
-            if (selectedItems[rowIndex] && qtyInput.value) {
+            if (selectedItems[rowIndex] && qtyInput.value && !isNaN(qtyInput.value) && qtyInput.value > 0) {
                 const total = selectedItems[rowIndex].price * parseInt(qtyInput.value);
                 priceCell.textContent = total.toLocaleString();
             } else {
@@ -426,15 +576,63 @@
             let total = 0;
             for (let i = 0; i < 8; i++) {
                 const qtyInput = document.querySelector(`.qty-input[data-row="${i}"]`);
-                if (selectedItems[i] && qtyInput.value) {
+                const priceCell = document.getElementById(`price-${i}`);
+                
+                // 取り消された商品は合計から除外
+                if (selectedItems[i] && qtyInput.value && !isNaN(qtyInput.value) && qtyInput.value > 0 && !priceCell.classList.contains('cancelled-item')) {
                     total += selectedItems[i].price * parseInt(qtyInput.value);
                 }
             }
             document.getElementById('total-amount').textContent = total.toLocaleString();
         }
 
-        // 注文確定
-        document.getElementById('confirm-order').addEventListener('click', () => {
+        // グローバル関数として定義（HTML内のonclickから呼び出せるように）
+        window.cancelOrderItem = cancelOrderItem;
+
+        // 初期化処理
+        function initializeApp() {
+            setupButtonEventListeners();
+            updateOrderStatus('new');
+        }
+
+        // ページ読み込み完了時に初期化
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+        // ボタンイベントリスナーの設定
+        function setupButtonEventListeners() {
+            // 注文ボタン
+            const confirmBtn = document.getElementById('confirm-order');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', handleOrderConfirm);
+            }
+            
+            // 再注文ボタン
+            const reorderBtn = document.getElementById('reorder-btn');
+            if (reorderBtn) {
+                reorderBtn.addEventListener('click', handleReorder);
+            }
+            
+            // 変更・取消ボタン
+            const editBtn = document.getElementById('edit-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', handleEdit);
+            }
+            
+            // 変更保存ボタン
+            const saveBtn = document.getElementById('save-changes');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', handleSaveChanges);
+            }
+            
+            // キャンセルボタン
+            const cancelBtn = document.getElementById('cancel-edit');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', handleCancelEdit);
+            }
+        }
+
+        // 注文確定処理
+        function handleOrderConfirm() {
             const tableNumber = document.getElementById('table-select').value;
             if (!tableNumber) {
                 alert('テーブル番号を選択してください');
@@ -448,7 +646,8 @@
                     orders.push({
                         name: selectedItems[i].name,
                         quantity: parseInt(qtyInput.value),
-                        price: selectedItems[i].price
+                        price: selectedItems[i].price,
+                        cancelled: false
                     });
                 }
             }
@@ -458,18 +657,94 @@
                 return;
             }
 
-            // 実際の実装では、ここでSquare APIに送信
-            const total = document.getElementById('total-amount').textContent;
-            alert(`テーブル${tableNumber}の注文を確定しました！\n合計: ${total}円`);
+            // 注文データを保存
+            currentOrderData = {
+                tableNumber: tableNumber,
+                orders: orders,
+                totalAmount: document.getElementById('total-amount').textContent
+            };
             
-            // リセット
+            saveOrderHistory(currentOrderData);
+            updateOrderStatus('confirmed');
+            
+            alert(`テーブル${tableNumber}の注文を確定しました！\n合計: ${currentOrderData.totalAmount}円`);
+        }
+
+        // 再注文処理
+        function handleReorder() {
+            // テーブルをクリアして新しい注文を開始
             selectedItems = new Array(8).fill(null);
-            document.querySelectorAll('.name-input').forEach(input => input.value = '');
-            document.querySelectorAll('.qty-input').forEach(input => input.value = '');
+            document.querySelectorAll('.name-input').forEach(input => {
+                input.value = '';
+                input.disabled = false;
+            });
+            document.querySelectorAll('.qty-input').forEach(input => {
+                input.value = '';
+                input.disabled = false;
+            });
             document.querySelectorAll('[id^="price-"]').forEach(cell => cell.textContent = '');
             updateTotal();
-            document.getElementById('table-select').value = '';
-        });
+            updateOrderStatus('new');
+        }
+
+        // 変更・取消処理
+        function handleEdit() {
+            updateOrderStatus('editing');
+            // 取消リンクを表示
+            showCancelLinks();
+        }
+
+        // 取消リンクの表示
+        function showCancelLinks() {
+            if (!currentOrderData) return;
+            
+            currentOrderData.orders.forEach((order, index) => {
+                const priceCell = document.getElementById(`price-${index}`);
+                if (priceCell && priceCell.textContent && !order.cancelled) {
+                    priceCell.innerHTML += `<span class="cancel-link" onclick="cancelOrderItem(${index})">取消</span>`;
+                }
+            });
+        }
+
+        // 個別商品の取消
+        function cancelOrderItem(index) {
+            if (currentOrderData && currentOrderData.orders[index]) {
+                currentOrderData.orders[index].cancelled = true;
+                
+                // 取り消し線を表示
+                const nameInput = document.querySelector(`.name-input[data-row="${index}"]`);
+                const qtyInput = document.querySelector(`.qty-input[data-row="${index}"]`);
+                const priceCell = document.getElementById(`price-${index}`);
+                
+                nameInput.classList.add('cancelled-item');
+                qtyInput.classList.add('cancelled-item');
+                priceCell.classList.add('cancelled-item');
+                
+                // 合計を再計算
+                updateTotal();
+            }
+        }
+
+        // 変更保存処理
+        function handleSaveChanges() {
+            // 変更内容をローカルストレージに保存
+            if (currentOrderData) {
+                saveOrderHistory(currentOrderData);
+            }
+            updateOrderStatus('confirmed');
+            alert('変更を保存しました');
+        }
+
+        // 編集キャンセル処理
+        function handleCancelEdit() {
+            // 取消リンクを削除
+            document.querySelectorAll('.cancel-link').forEach(link => link.remove());
+            // 取り消し線を削除
+            document.querySelectorAll('.cancelled-item').forEach(item => {
+                item.classList.remove('cancelled-item');
+            });
+            updateOrderStatus('confirmed');
+        }
     </script>
 </body>
 </html>
