@@ -82,23 +82,6 @@
             border-right: none;
         }
 
-        /* 履歴表示用のスタイル */
-        .history-row {
-            background-color: #f8f9fa !important;
-        }
-
-        .history-row input {
-            color: #6c757d !important;
-            font-style: italic;
-            background-color: transparent !important;
-            pointer-events: none;
-        }
-
-        .history-row .col-total {
-            color: #6c757d !important;
-            font-style: italic;
-        }
-
         .col-name {
             width: 50%;
             cursor: text;
@@ -220,31 +203,111 @@
             border-color: #555;
         }
 
+        /* 注文履歴セクション */
+        .order-history-section {
+            margin-top: 30px;
+            border-top: 2px solid #999;
+            padding-top: 20px;
+        }
+
+        .history-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .history-item {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .history-content {
+            font-size: 14px;
+        }
+
+        .history-item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px dotted #ddd;
+        }
+
+        .history-item-row:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #ddd;
+        }
+
+        .history-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .modify-cancel-btn {
+            background: #8B4513;
+            color: white;
+            border: 2px solid #8B4513;
+            padding: 8px 20px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .modify-cancel-btn:hover {
+            background: #A0522D;
+            border-color: #A0522D;
+        }
+
         .cancelled-item {
             text-decoration: line-through;
             color: #999;
         }
 
-        .cancel-link {
+        .modified-item {
+            background-color: #fff3cd;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
             font-size: 10px;
-            color: #d32f2f;
-            text-decoration: underline;
-            cursor: pointer;
-            margin-left: 5px;
+            font-weight: bold;
         }
 
-        .disabled-input {
-            background: #f5f5f5 !important;
-            color: #666;
+        .status-confirmed {
+            display: none;
         }
 
-        .confirmed-table {
-            background-color: #F0F0F0 !important;
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
         }
 
-        .confirmed-input {
-            background: #F0F0F0 !important;
-            color: #666 !important;
+        .status-modified {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .clear-history-btn {
+            display: none;
         }
     </style>
 </head>
@@ -383,6 +446,15 @@
         <div class="confirm-section">
             <button class="confirm-btn" id="confirm-order">注文</button>
         </div>
+
+        <!-- 注文履歴セクション -->
+        <div class="order-history-section">
+            <div class="history-title">注文履歴</div>
+            <div id="order-history-container">
+                <!-- 注文履歴がここに表示されます -->
+            </div>
+            <button class="clear-history-btn" id="clear-history-btn">履歴をクリア</button>
+        </div>
     </div>
 
     <script>
@@ -420,12 +492,14 @@
         ];
 
         let selectedItems = new Array(8).fill(null);
-        let orderStatus = 'new';
-        let confirmedOrders = [];
-        let currentOrderData = null;
+
+        function getStorageKey() {
+            const tableNumber = document.getElementById('table-select').value;
+            return tableNumber ? `orderHistory_table_${tableNumber}` : 'orderHistory_default';
+        }
 
         function loadOrderHistory() {
-            const saved = localStorage.getItem('orderHistory');
+            const saved = localStorage.getItem(getStorageKey());
             return saved ? JSON.parse(saved) : [];
         }
 
@@ -434,98 +508,178 @@
             history.push({
                 ...orderData,
                 timestamp: new Date().toISOString(),
-                id: Date.now()
+                id: Date.now(),
+                status: 'confirmed'
             });
-            localStorage.setItem('orderHistory', JSON.stringify(history));
+            localStorage.setItem(getStorageKey(), JSON.stringify(history));
             displayOrderHistory();
         }
 
+        function updateOrderHistory(orderId, updatedData) {
+            const history = loadOrderHistory();
+            const orderIndex = history.findIndex(order => order.id === orderId);
+            if (orderIndex !== -1) {
+                history[orderIndex] = { ...history[orderIndex], ...updatedData };
+                localStorage.setItem(getStorageKey(), JSON.stringify(history));
+                displayOrderHistory();
+            }
+        }
+
         function displayOrderHistory() {
-            const tbody = document.getElementById('order-tbody');
+            const container = document.getElementById('order-history-container');
             const history = loadOrderHistory();
             
-            if (history.length === 0) return;
+            if (history.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">注文履歴がありません</div>';
+                return;
+            }
             
-            // 最新の注文履歴をチビ伝に追加表示
-            const latestOrder = history[history.length - 1];
-            let currentRowIndex = 8; // 8行目から履歴を表示
+            container.innerHTML = '';
             
-            latestOrder.orders.forEach(item => {
-                if (!item.cancelled) {
-                    const newRow = document.createElement('tr');
-                    newRow.className = 'history-row';
-                    newRow.innerHTML = `
-                        <td class="col-name">
-                            <input type="text" class="editable-cell name-input" value="${item.name}" readonly data-row="${currentRowIndex}">
-                        </td>
-                        <td class="col-qty">
-                            <input type="text" class="editable-cell qty-input" value="${item.quantity}" readonly data-row="${currentRowIndex}">
-                        </td>
-                        <td class="col-price">
-                            <input type="text" class="editable-cell price-input" value="${item.price}" readonly data-row="${currentRowIndex}">
-                        </td>
-                        <td class="col-total"></td>
+            history.reverse().forEach(order => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                const statusClass = order.status === 'cancelled' ? 'status-cancelled' : 
+                                  order.status === 'modified' ? 'status-modified' : 'status-confirmed';
+                
+                const statusText = order.status === 'cancelled' ? '取消済' : 
+                                 order.status === 'modified' ? '変更済' : '';
+                
+                let itemsHtml = '';
+                let totalAmount = 0;
+                
+                order.orders.forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    if (!item.cancelled) {
+                        totalAmount += itemTotal;
+                    }
+                    
+                    const itemClass = item.cancelled ? 'cancelled-item' : '';
+                    itemsHtml += `
+                        <div class="history-item-row ${itemClass}">
+                            <span>${item.name} × ${item.quantity}</span>
+                            <span>¥${itemTotal.toLocaleString()}</span>
+                        </div>
                     `;
-                    tbody.appendChild(newRow);
-                    currentRowIndex++;
-                }
+                });
+                
+                itemsHtml += `
+                    <div class="history-item-row">
+                        <span>合計</span>
+                        <span>¥${totalAmount.toLocaleString()}</span>
+                    </div>
+                `;
+                
+                historyItem.innerHTML = `
+                    <div class="history-header">
+                        <span>${new Date(order.timestamp).toLocaleString()}</span>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="history-content">
+                        ${itemsHtml}
+                    </div>
+                    <div class="history-buttons">
+                        <button class="modify-cancel-btn" onclick="modifyOrder(${order.id})">取消</button>
+                    </div>
+                `;
+                
+                container.appendChild(historyItem);
             });
         }
 
-        // 履歴クリア機能（簡素化）
-        function clearOrderHistory() {
-            localStorage.removeItem('orderHistory');
-            // チビ伝内の履歴行を削除
-            document.querySelectorAll('.history-row').forEach(row => row.remove());
-            console.log('注文履歴をクリアしました');
+        function addToCurrentOrder(orderId) {
+            // この関数は削除されました
         }
 
-        function updateOrderStatus(newStatus) {
-            orderStatus = newStatus;
-            updateButtonsUI();
-            updateTableUI();
-        }
-
-        function updateButtonsUI() {
-            const confirmSection = document.querySelector('.confirm-section');
+        function modifyOrder(orderId) {
+            const history = loadOrderHistory();
+            const order = history.find(o => o.id === orderId);
+            if (!order) return;
             
-            if (orderStatus === 'new') {
-                confirmSection.innerHTML = `
-                    <button class="confirm-btn" id="confirm-order">注文</button>
-                `;
-            } else if (orderStatus === 'confirmed') {
-                confirmSection.innerHTML = `
-                    <button class="confirm-btn" id="reorder-btn">再注文</button>
-                    <button class="edit-btn" id="edit-btn">変更・取消</button>
-                `;
-            } else if (orderStatus === 'editing') {
-                confirmSection.innerHTML = `
-                    <button class="confirm-btn" id="save-changes">変更保存</button>
-                    <button class="edit-btn" id="edit-btn">変更・取消</button>
-                `;
+            if (order.status === 'cancelled') {
+                alert('この注文は既に取消済みです。');
+                return;
             }
             
-            setupButtonEventListeners();
-        }
-
-        function updateTableUI() {
-            const tableElement = document.querySelector('.order-table');
+            const action = confirm('この注文を取消しますか？\n「OK」= 全体取消\n「キャンセル」= 個別変更');
             
-            if (orderStatus === 'confirmed') {
-                tableElement.classList.add('confirmed-table');
-                document.querySelectorAll('.editable-cell').forEach(input => {
-                    input.disabled = true;
-                    input.classList.add('confirmed-input');
-                });
+            if (action) {
+                // 全体取消
+                updateOrderHistory(orderId, { status: 'cancelled' });
+                alert('注文を取消しました。');
             } else {
-                tableElement.classList.remove('confirmed-table');
-                document.querySelectorAll('.editable-cell').forEach(input => {
-                    input.disabled = false;
-                    input.classList.remove('confirmed-input');
-                });
+                // 個別変更モード
+                showOrderModificationModal(orderId);
             }
         }
 
+        function showOrderModificationModal(orderId) {
+            const history = loadOrderHistory();
+            const order = history.find(o => o.id === orderId);
+            if (!order) return;
+            
+            let modalHtml = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; justify-content: center; align-items: center;" id="modification-modal">
+                    <div style="background: white; padding: 20px; border-radius: 8px; max-width: 400px; width: 90%;">
+                        <h3 style="margin-bottom: 15px;">注文変更</h3>
+                        <div id="modification-items">
+            `;
+            
+            order.orders.forEach((item, index) => {
+                if (!item.cancelled) {
+                    modalHtml += `
+                        <div style="display: flex; align-items: center; margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            <input type="checkbox" id="cancel-${index}" style="margin-right: 8px;">
+                            <span style="flex: 1;">${item.name} × ${item.quantity} (¥${item.price})</span>
+                        </div>
+                    `;
+                }
+            });
+            
+            modalHtml += `
+                        </div>
+                        <div style="margin-top: 20px; text-align: right;">
+                            <button onclick="closeModificationModal()" style="margin-right: 10px; padding: 8px 16px; background: #666; color: white; border: none; border-radius: 4px;">キャンセル</button>
+                            <button onclick="applyModifications(${orderId})" style="padding: 8px 16px; background: #8B4513; color: white; border: none; border-radius: 4px;">取消</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        function closeModificationModal() {
+            const modal = document.getElementById('modification-modal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function applyModifications(orderId) {
+            const history = loadOrderHistory();
+            const order = history.find(o => o.id === orderId);
+            if (!order) return;
+            
+            let hasChanges = false;
+            order.orders.forEach((item, index) => {
+                const checkbox = document.getElementById(`cancel-${index}`);
+                if (checkbox && checkbox.checked) {
+                    item.cancelled = true;
+                    hasChanges = true;
+                }
+            });
+            
+            if (hasChanges) {
+                updateOrderHistory(orderId, { status: 'modified', orders: order.orders });
+                alert('選択した商品を取消しました。');
+            }
+            
+            closeModificationModal();
+        }
+
+        // 既存の関数群
         document.querySelectorAll('.name-input').forEach((input, index) => {
             input.addEventListener('input', function() {
                 handleNameInput(this, index);
@@ -562,14 +716,11 @@
             });
         });
 
-        // 価格入力フィールドのイベントリスナー
         document.querySelectorAll('.price-input').forEach((input, index) => {
             input.addEventListener('input', function() {
-                // 全角数字を半角に変換
                 let value = this.value.replace(/[０-９]/g, function(s) {
                     return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
                 });
-                // 数字以外を除去
                 value = value.replace(/[^0-9]/g, '');
                 this.value = value;
                 updateRowPrice(index);
@@ -629,13 +780,12 @@
             if (!nameInput || !qtyInput || !priceInput) return;
             
             nameInput.value = item.name;
-            priceInput.value = item.price; // 価格を自動入力（編集可能）
+            priceInput.value = item.price;
             selectedItems[rowIndex] = item;
             
             hideSuggestions(rowIndex);
             updateRowPrice(rowIndex);
             
-            // 数量フィールドにフォーカス（価格は編集可能なまま）
             qtyInput.focus();
         }
 
@@ -644,7 +794,6 @@
 
             if (query.length === 0) {
                 hideSuggestions(rowIndex);
-                // メニュー未選択でも手動入力可能
                 updateRowPrice(rowIndex);
                 return;
             }
@@ -658,7 +807,6 @@
                 showSuggestions(rowIndex);
             } else {
                 hideSuggestions(rowIndex);
-                // 候補がない場合も手動入力として扱う
                 updateRowPrice(rowIndex);
             }
         }
@@ -686,38 +834,15 @@
             for (let i = 0; i < 8; i++) {
                 const qtyInput = document.querySelector(`.qty-input[data-row="${i}"]`);
                 const priceInput = document.querySelector(`.price-input[data-row="${i}"]`);
-                const totalCell = document.getElementById(`total-${i}`);
                 
                 const quantity = parseInt(qtyInput.value) || 0;
                 const price = parseInt(priceInput.value) || 0;
                 
-                if (quantity > 0 && price > 0 && !totalCell.classList.contains('cancelled-item')) {
+                if (quantity > 0 && price > 0) {
                     total += price * quantity;
                 }
             }
             document.getElementById('total-amount').textContent = total.toLocaleString();
-        }
-
-        function setupButtonEventListeners() {
-            const confirmBtn = document.getElementById('confirm-order');
-            if (confirmBtn) {
-                confirmBtn.addEventListener('click', handleOrderConfirm);
-            }
-            
-            const reorderBtn = document.getElementById('reorder-btn');
-            if (reorderBtn) {
-                reorderBtn.addEventListener('click', handleReorder);
-            }
-            
-            const editBtn = document.getElementById('edit-btn');
-            if (editBtn) {
-                editBtn.addEventListener('click', handleEdit);
-            }
-            
-            const saveBtn = document.getElementById('save-changes');
-            if (saveBtn) {
-                saveBtn.addEventListener('click', handleSaveChanges);
-            }
         }
 
         function handleOrderConfirm() {
@@ -752,143 +877,48 @@
                 return;
             }
 
-            currentOrderData = {
+            const orderData = {
                 tableNumber: tableNumber,
                 orders: orders,
                 totalAmount: document.getElementById('total-amount').textContent
             };
             
-            saveOrderHistory(currentOrderData);
-            updateOrderStatus('confirmed');
+            saveOrderHistory(orderData);
+            clearCurrentOrder();
             
-            console.log(`テーブル${tableNumber}の注文を確定しました！\n合計: ${currentOrderData.totalAmount}円`);
+            alert(`テーブル${tableNumber}の注文を確定しました！\n合計: ${orderData.totalAmount}円`);
         }
 
-        function handleReorder() {
-            // 選択アイテムをクリア
-            selectedItems = new Array(8).fill(null);
-            
-            // 履歴行を削除
-            document.querySelectorAll('.history-row').forEach(row => row.remove());
-            
-            // 入力フィールドをクリア・有効化
-            document.querySelectorAll('.name-input').forEach(input => {
-                input.value = '';
-                input.disabled = false;
-                input.style.textDecoration = '';
-                input.style.color = '';
-            });
-            
-            document.querySelectorAll('.qty-input').forEach(input => {
-                input.value = '';
-                input.disabled = false;
-                input.style.textDecoration = '';
-                input.style.color = '';
-            });
-            
-            document.querySelectorAll('.price-input').forEach(input => {
-                input.value = '';
-                input.disabled = false;
-                input.style.textDecoration = '';
-                input.style.color = '';
-            });
+        function clearCurrentOrder() {
+            // 入力フィールドをクリア
+            document.querySelectorAll('.name-input').forEach(input => input.value = '');
+            document.querySelectorAll('.qty-input').forEach(input => input.value = '');
+            document.querySelectorAll('.price-input').forEach(input => input.value = '');
             
             // 小計セルをクリア
-            document.querySelectorAll('[id^="total-"]').forEach(cell => {
-                cell.textContent = '';
-                cell.style.textDecoration = '';
-                cell.style.color = '';
-                const cancelLink = cell.querySelector('.cancel-link');
-                if (cancelLink) {
-                    cancelLink.remove();
-                }
-            });
+            document.querySelectorAll('[id^="total-"]').forEach(cell => cell.textContent = '');
             
             // 合計をリセット
             updateTotal();
             
-            // 注文データをクリア
-            currentOrderData = null;
-            
-            // 新規注文状態に戻す
-            updateOrderStatus('new');
+            // 選択アイテムをクリア
+            selectedItems = new Array(8).fill(null);
         }
 
-        function handleEdit() {
-            updateOrderStatus('editing');
-            showCancelLinks();
-        }
-
-        function showCancelLinks() {
-            if (!currentOrderData) return;
-            
-            currentOrderData.orders.forEach((order, index) => {
-                const priceCell = document.getElementById(`price-${index}`);
-                if (priceCell && priceCell.textContent && !order.cancelled) {
-                    priceCell.innerHTML += `<span class="cancel-link" onclick="cancelOrderItem(${index})">取消</span>`;
-                }
-            });
-        }
-
-        function cancelOrderItem(index) {
-            if (currentOrderData && currentOrderData.orders[index]) {
-                currentOrderData.orders[index].cancelled = true;
-                
-                const nameInput = document.querySelector(`.name-input[data-row="${index}"]`);
-                const qtyInput = document.querySelector(`.qty-input[data-row="${index}"]`);
-                const priceCell = document.getElementById(`price-${index}`);
-                
-                nameInput.style.textDecoration = 'line-through';
-                nameInput.style.color = '#999';
-                qtyInput.style.textDecoration = 'line-through';
-                qtyInput.style.color = '#999';
-                priceCell.style.textDecoration = 'line-through';
-                priceCell.style.color = '#999';
-                
-                const cancelLink = priceCell.querySelector('.cancel-link');
-                if (cancelLink) {
-                    cancelLink.remove();
-                }
-                
-                updateTotal();
+        function clearAllHistory() {
+            if (confirm('すべての注文履歴を削除しますか？')) {
+                localStorage.removeItem(getStorageKey());
+                displayOrderHistory();
+                alert('注文履歴をクリアしました。');
             }
         }
 
-        function handleSaveChanges() {
-            // 取消リンクを削除
-            document.querySelectorAll('.cancel-link').forEach(link => link.remove());
+        function setupEventListeners() {
+            document.getElementById('confirm-order').addEventListener('click', handleOrderConfirm);
             
-            if (currentOrderData) {
-                saveOrderHistory(currentOrderData);
-            }
-            updateOrderStatus('confirmed');
-            console.log('変更を保存しました');
-        }
-
-        function initializeApp() {
-            setupButtonEventListeners();
-            setupTableChangeListener(); // テーブル変更監視を追加
-            updateOrderStatus('new');
-            displayOrderHistory();
-        }
-
-        // テーブル選択変更の監視
-        function setupTableChangeListener() {
-            const tableSelect = document.getElementById('table-select');
-            let previousTable = tableSelect.value;
-            
-            tableSelect.addEventListener('change', function() {
-                const currentTable = this.value;
-                
-                // テーブルが変更された場合（空から選択も含む）
-                if (currentTable !== previousTable && currentTable !== '') {
-                    clearOrderHistory();
-                    // チビ伝内の履歴行も削除
-                    document.querySelectorAll('.history-row').forEach(row => row.remove());
-                    console.log(`テーブル${currentTable}に変更しました。履歴をクリアしました。`);
-                }
-                
-                previousTable = currentTable;
+            // テーブル選択変更時の処理
+            document.getElementById('table-select').addEventListener('change', function() {
+                displayOrderHistory();
             });
         }
 
@@ -900,9 +930,10 @@
             });
         });
 
-        window.cancelOrderItem = cancelOrderItem;
-
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            displayOrderHistory();
+        });
     </script>
 </body>
 </html>
