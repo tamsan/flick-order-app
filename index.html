@@ -266,7 +266,6 @@
 
         .history-buttons {
             display: flex;
-            gap: 8px;
             justify-content: center;
             margin-top: 10px;
         }
@@ -275,32 +274,15 @@
             background: #8B4513;
             color: white;
             border: 2px solid #8B4513;
-            padding: 6px 12px;
+            padding: 6px 16px;
             font-size: 11px;
             cursor: pointer;
             border-radius: 4px;
-            flex: 1;
         }
 
         .modify-cancel-btn:hover {
             background: #A0522D;
             border-color: #A0522D;
-        }
-
-        .edit-order-btn {
-            background: #4CAF50;
-            color: white;
-            border: 2px solid #4CAF50;
-            padding: 6px 12px;
-            font-size: 11px;
-            cursor: pointer;
-            border-radius: 4px;
-            flex: 1;
-        }
-
-        .edit-order-btn:hover {
-            background: #45a049;
-            border-color: #45a049;
         }
 
         .cancelled-item {
@@ -607,7 +589,6 @@
                         ${itemsHtml}
                     </div>
                     <div class="history-buttons">
-                        <button class="edit-order-btn" onclick="editOrder(${order.id})">変更</button>
                         <button class="modify-cancel-btn" onclick="modifyOrder(${order.id})">取消</button>
                     </div>
                 `;
