@@ -184,46 +184,6 @@
             color: #333;
         }
 
-        .order-history {
-            margin: 15px;
-            background: white;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .history-header {
-            background: #f0f0f0;
-            padding: 8px 12px;
-            font-weight: bold;
-            font-size: 14px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .history-content {
-            padding: 10px;
-        }
-
-        .history-order {
-            margin-bottom: 10px;
-            padding: 8px;
-            background: #f9f9f9;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-
-        .history-order-header {
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #8B4513;
-        }
-
-        .history-item {
-            margin: 2px 0;
-            color: #666;
-        }
-
         .confirm-section {
             text-align: center;
             margin-top: 20px;
@@ -515,7 +475,7 @@
         // 履歴クリア機能（簡素化）
         function clearOrderHistory() {
             localStorage.removeItem('orderHistory');
-            // 履歴行を削除
+            // チビ伝内の履歴行を削除
             document.querySelectorAll('.history-row').forEach(row => row.remove());
             console.log('注文履歴をクリアしました');
         }
@@ -669,12 +629,13 @@
             if (!nameInput || !qtyInput || !priceInput) return;
             
             nameInput.value = item.name;
-            priceInput.value = item.price; // 価格を自動入力
+            priceInput.value = item.price; // 価格を自動入力（編集可能）
             selectedItems[rowIndex] = item;
             
             hideSuggestions(rowIndex);
             updateRowPrice(rowIndex);
             
+            // 数量フィールドにフォーカス（価格は編集可能なまま）
             qtyInput.focus();
         }
 
@@ -683,7 +644,7 @@
 
             if (query.length === 0) {
                 hideSuggestions(rowIndex);
-                selectedItems[rowIndex] = null;
+                // メニュー未選択でも手動入力可能
                 updateRowPrice(rowIndex);
                 return;
             }
@@ -697,7 +658,7 @@
                 showSuggestions(rowIndex);
             } else {
                 hideSuggestions(rowIndex);
-                selectedItems[rowIndex] = null;
+                // 候補がない場合も手動入力として扱う
                 updateRowPrice(rowIndex);
             }
         }
@@ -922,6 +883,8 @@
                 // テーブルが変更された場合（空から選択も含む）
                 if (currentTable !== previousTable && currentTable !== '') {
                     clearOrderHistory();
+                    // チビ伝内の履歴行も削除
+                    document.querySelectorAll('.history-row').forEach(row => row.remove());
                     console.log(`テーブル${currentTable}に変更しました。履歴をクリアしました。`);
                 }
                 
