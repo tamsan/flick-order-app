@@ -611,16 +611,8 @@
                 return;
             }
             
-            const action = confirm('この注文を取消しますか？\n「OK」= 全体取消\n「キャンセル」= 個別変更');
-            
-            if (action) {
-                // 全体取消
-                updateOrderHistory(orderId, { status: 'cancelled' });
-                alert('注文を取消しました。');
-            } else {
-                // 個別変更モード
-                showOrderModificationModal(orderId);
-            }
+            // ダイアログなしで直接個別変更モードへ
+            showOrderModificationModal(orderId);
         }
 
         function showOrderModificationModal(orderId) {
