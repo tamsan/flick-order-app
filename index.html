@@ -60,6 +60,13 @@
             background: #F8F8F0;
         }
 
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #999;
+            border-radius: 4px;
+        }
+
         .order-table td {
             border-bottom: 1px solid #999;
             border-right: 1px solid #999;
@@ -73,6 +80,23 @@
 
         .order-table td:last-child {
             border-right: none;
+        }
+
+        /* 履歴表示用のスタイル */
+        .history-row {
+            background-color: #f8f9fa !important;
+        }
+
+        .history-row input {
+            color: #6c757d !important;
+            font-style: italic;
+            background-color: transparent !important;
+            pointer-events: none;
+        }
+
+        .history-row .col-total {
+            color: #6c757d !important;
+            font-style: italic;
         }
 
         .col-name {
@@ -89,7 +113,12 @@
 
         .col-price {
             width: 30%;
-            text-align: right;
+            text-align: center;
+            cursor: text;
+        }
+
+        .col-total {
+            display: none;
         }
 
         .editable-cell {
@@ -276,98 +305,119 @@
             </select>
         </div>
 
-        <table class="order-table">
-            <tbody id="order-tbody">
-                <tr>
-                    <td class="col-name">
-                        <input type="text" class="editable-cell name-input" placeholder="" data-row="0">
-                        <div class="suggestions" id="suggestions-0"></div>
-                    </td>
-                    <td class="col-qty">
-                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="0">
-                    </td>
-                    <td class="col-price" id="price-0"></td>
-                </tr>
-                <tr>
-                    <td class="col-name">
-                        <input type="text" class="editable-cell name-input" placeholder="" data-row="1">
-                        <div class="suggestions" id="suggestions-1"></div>
-                    </td>
-                    <td class="col-qty">
-                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="1">
-                    </td>
-                    <td class="col-price" id="price-1"></td>
-                </tr>
-                <tr>
-                    <td class="col-name">
-                        <input type="text" class="editable-cell name-input" placeholder="" data-row="2">
-                        <div class="suggestions" id="suggestions-2"></div>
-                    </td>
-                    <td class="col-qty">
-                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="2">
-                    </td>
-                    <td class="col-price" id="price-2"></td>
-                </tr>
-                <tr>
-                    <td class="col-name">
-                        <input type="text" class="editable-cell name-input" placeholder="" data-row="3">
-                        <div class="suggestions" id="suggestions-3"></div>
-                    </td>
-                    <td class="col-qty">
-                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="3">
-                    </td>
-                    <td class="col-price" id="price-3"></td>
-                </tr>
-                <tr>
-                    <td class="col-name">
-                        <input type="text" class="editable-cell name-input" placeholder="" data-row="4">
-                        <div class="suggestions" id="suggestions-4"></div>
-                    </td>
-                    <td class="col-qty">
-                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="4">
-                    </td>
-                    <td class="col-price" id="price-4"></td>
-                </tr>
-                <tr>
-                    <td class="col-name">
-                        <input type="text" class="editable-cell name-input" placeholder="" data-row="5">
-                        <div class="suggestions" id="suggestions-5"></div>
-                    </td>
-                    <td class="col-qty">
-                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="5">
-                    </td>
-                    <td class="col-price" id="price-5"></td>
-                </tr>
-                <tr>
-                    <td class="col-name">
-                        <input type="text" class="editable-cell name-input" placeholder="" data-row="6">
-                        <div class="suggestions" id="suggestions-6"></div>
-                    </td>
-                    <td class="col-qty">
-                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="6">
-                    </td>
-                    <td class="col-price" id="price-6"></td>
-                </tr>
-                <tr>
-                    <td class="col-name">
-                        <input type="text" class="editable-cell name-input" placeholder="" data-row="7">
-                        <div class="suggestions" id="suggestions-7"></div>
-                    </td>
-                    <td class="col-qty">
-                        <input type="text" class="editable-cell qty-input" placeholder="" data-row="7">
-                    </td>
-                    <td class="col-price" id="price-7"></td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="table-container">
+            <table class="order-table">
+                <tbody id="order-tbody">
+                    <tr>
+                        <td class="col-name">
+                            <input type="text" class="editable-cell name-input" placeholder="" data-row="0">
+                            <div class="suggestions" id="suggestions-0"></div>
+                        </td>
+                        <td class="col-qty">
+                            <input type="text" class="editable-cell qty-input" placeholder="" data-row="0">
+                        </td>
+                        <td class="col-price">
+                            <input type="text" class="editable-cell price-input" placeholder="" data-row="0">
+                        </td>
+                        <td class="col-total" id="total-0"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-name">
+                            <input type="text" class="editable-cell name-input" placeholder="" data-row="1">
+                            <div class="suggestions" id="suggestions-1"></div>
+                        </td>
+                        <td class="col-qty">
+                            <input type="text" class="editable-cell qty-input" placeholder="" data-row="1">
+                        </td>
+                        <td class="col-price">
+                            <input type="text" class="editable-cell price-input" placeholder="" data-row="1">
+                        </td>
+                        <td class="col-total" id="total-1"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-name">
+                            <input type="text" class="editable-cell name-input" placeholder="" data-row="2">
+                            <div class="suggestions" id="suggestions-2"></div>
+                        </td>
+                        <td class="col-qty">
+                            <input type="text" class="editable-cell qty-input" placeholder="" data-row="2">
+                        </td>
+                        <td class="col-price">
+                            <input type="text" class="editable-cell price-input" placeholder="" data-row="2">
+                        </td>
+                        <td class="col-total" id="total-2"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-name">
+                            <input type="text" class="editable-cell name-input" placeholder="" data-row="3">
+                            <div class="suggestions" id="suggestions-3"></div>
+                        </td>
+                        <td class="col-qty">
+                            <input type="text" class="editable-cell qty-input" placeholder="" data-row="3">
+                        </td>
+                        <td class="col-price">
+                            <input type="text" class="editable-cell price-input" placeholder="" data-row="3">
+                        </td>
+                        <td class="col-total" id="total-3"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-name">
+                            <input type="text" class="editable-cell name-input" placeholder="" data-row="4">
+                            <div class="suggestions" id="suggestions-4"></div>
+                        </td>
+                        <td class="col-qty">
+                            <input type="text" class="editable-cell qty-input" placeholder="" data-row="4">
+                        </td>
+                        <td class="col-price">
+                            <input type="text" class="editable-cell price-input" placeholder="" data-row="4">
+                        </td>
+                        <td class="col-total" id="total-4"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-name">
+                            <input type="text" class="editable-cell name-input" placeholder="" data-row="5">
+                            <div class="suggestions" id="suggestions-5"></div>
+                        </td>
+                        <td class="col-qty">
+                            <input type="text" class="editable-cell qty-input" placeholder="" data-row="5">
+                        </td>
+                        <td class="col-price">
+                            <input type="text" class="editable-cell price-input" placeholder="" data-row="5">
+                        </td>
+                        <td class="col-total" id="total-5"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-name">
+                            <input type="text" class="editable-cell name-input" placeholder="" data-row="6">
+                            <div class="suggestions" id="suggestions-6"></div>
+                        </td>
+                        <td class="col-qty">
+                            <input type="text" class="editable-cell qty-input" placeholder="" data-row="6">
+                        </td>
+                        <td class="col-price">
+                            <input type="text" class="editable-cell price-input" placeholder="" data-row="6">
+                        </td>
+                        <td class="col-total" id="total-6"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-name">
+                            <input type="text" class="editable-cell name-input" placeholder="" data-row="7">
+                            <div class="suggestions" id="suggestions-7"></div>
+                        </td>
+                        <td class="col-qty">
+                            <input type="text" class="editable-cell qty-input" placeholder="" data-row="7">
+                        </td>
+                        <td class="col-price">
+                            <input type="text" class="editable-cell price-input" placeholder="" data-row="7">
+                        </td>
+                        <td class="col-total" id="total-7"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
         <div class="total-section">
             合計　<span id="total-amount">0</span>円
-        </div>
-
-        <div class="order-history" id="order-history" style="display: none;">
-            <div class="history-header">注文履歴</div>
-            <div class="history-content" id="history-content"></div>
         </div>
 
         <div class="confirm-section">
@@ -431,52 +481,42 @@
         }
 
         function displayOrderHistory() {
-            const historyArea = document.getElementById('order-history');
-            const historyContent = document.getElementById('history-content');
+            const tbody = document.getElementById('order-tbody');
             const history = loadOrderHistory();
             
-            if (history.length === 0) {
-                historyArea.style.display = 'none';
-                return;
-            }
+            if (history.length === 0) return;
             
-            historyArea.style.display = 'block';
-            historyContent.innerHTML = '';
+            // 最新の注文履歴をチビ伝に追加表示
+            const latestOrder = history[history.length - 1];
+            let currentRowIndex = 8; // 8行目から履歴を表示
             
-            const recentHistory = history.slice(-3).reverse();
-            
-            recentHistory.forEach((order, index) => {
-                const orderDiv = document.createElement('div');
-                orderDiv.className = 'history-order';
-                
-                const date = new Date(order.timestamp);
-                const timeStr = date.toLocaleTimeString('ja-JP', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-                
-                let itemsHtml = '';
-                order.orders.forEach(item => {
-                    if (!item.cancelled) {
-                        itemsHtml += `<div class="history-item">${item.name} × ${item.quantity}</div>`;
-                    }
-                });
-                
-                orderDiv.innerHTML = `
-                    <div class="history-order-header">
-                        ${timeStr} - テーブル${order.tableNumber} - ${order.totalAmount}円
-                    </div>
-                    ${itemsHtml}
-                `;
-                
-                historyContent.appendChild(orderDiv);
+            latestOrder.orders.forEach(item => {
+                if (!item.cancelled) {
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'history-row';
+                    newRow.innerHTML = `
+                        <td class="col-name">
+                            <input type="text" class="editable-cell name-input" value="${item.name}" readonly data-row="${currentRowIndex}">
+                        </td>
+                        <td class="col-qty">
+                            <input type="text" class="editable-cell qty-input" value="${item.quantity}" readonly data-row="${currentRowIndex}">
+                        </td>
+                        <td class="col-price">
+                            <input type="text" class="editable-cell price-input" value="${item.price}" readonly data-row="${currentRowIndex}">
+                        </td>
+                        <td class="col-total"></td>
+                    `;
+                    tbody.appendChild(newRow);
+                    currentRowIndex++;
+                }
             });
         }
 
-        // 履歴クリア機能
+        // 履歴クリア機能（簡素化）
         function clearOrderHistory() {
             localStorage.removeItem('orderHistory');
-            displayOrderHistory();
+            // 履歴行を削除
+            document.querySelectorAll('.history-row').forEach(row => row.remove());
             console.log('注文履歴をクリアしました');
         }
 
@@ -562,6 +602,28 @@
             });
         });
 
+        // 価格入力フィールドのイベントリスナー
+        document.querySelectorAll('.price-input').forEach((input, index) => {
+            input.addEventListener('input', function() {
+                // 全角数字を半角に変換
+                let value = this.value.replace(/[０-９]/g, function(s) {
+                    return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+                });
+                // 数字以外を除去
+                value = value.replace(/[^0-9]/g, '');
+                this.value = value;
+                updateRowPrice(index);
+            });
+
+            input.addEventListener('focus', function() {
+                this.style.backgroundColor = '#fff';
+            });
+
+            input.addEventListener('blur', function() {
+                this.style.backgroundColor = '';
+            });
+        });
+
         function hideSuggestions(rowIndex) {
             const suggestionsDiv = document.getElementById(`suggestions-${rowIndex}`);
             if (suggestionsDiv) {
@@ -602,10 +664,12 @@
         function selectMenuItem(item, rowIndex) {
             const nameInput = document.querySelector(`.name-input[data-row="${rowIndex}"]`);
             const qtyInput = document.querySelector(`.qty-input[data-row="${rowIndex}"]`);
+            const priceInput = document.querySelector(`.price-input[data-row="${rowIndex}"]`);
             
-            if (!nameInput || !qtyInput) return;
+            if (!nameInput || !qtyInput || !priceInput) return;
             
             nameInput.value = item.name;
+            priceInput.value = item.price; // 価格を自動入力
             selectedItems[rowIndex] = item;
             
             hideSuggestions(rowIndex);
@@ -640,13 +704,17 @@
 
         function updateRowPrice(rowIndex) {
             const qtyInput = document.querySelector(`.qty-input[data-row="${rowIndex}"]`);
-            const priceCell = document.getElementById(`price-${rowIndex}`);
+            const priceInput = document.querySelector(`.price-input[data-row="${rowIndex}"]`);
+            const totalCell = document.getElementById(`total-${rowIndex}`);
             
-            if (selectedItems[rowIndex] && qtyInput.value && !isNaN(qtyInput.value) && qtyInput.value > 0) {
-                const total = selectedItems[rowIndex].price * parseInt(qtyInput.value);
-                priceCell.textContent = total.toLocaleString();
+            const quantity = parseInt(qtyInput.value) || 0;
+            const price = parseInt(priceInput.value) || 0;
+            
+            if (quantity > 0 && price > 0) {
+                const total = price * quantity;
+                totalCell.textContent = total.toLocaleString();
             } else {
-                priceCell.textContent = '';
+                totalCell.textContent = '';
             }
             
             updateTotal();
@@ -656,10 +724,14 @@
             let total = 0;
             for (let i = 0; i < 8; i++) {
                 const qtyInput = document.querySelector(`.qty-input[data-row="${i}"]`);
-                const priceCell = document.getElementById(`price-${i}`);
+                const priceInput = document.querySelector(`.price-input[data-row="${i}"]`);
+                const totalCell = document.getElementById(`total-${i}`);
                 
-                if (selectedItems[i] && qtyInput.value && !isNaN(qtyInput.value) && qtyInput.value > 0 && !priceCell.classList.contains('cancelled-item')) {
-                    total += selectedItems[i].price * parseInt(qtyInput.value);
+                const quantity = parseInt(qtyInput.value) || 0;
+                const price = parseInt(priceInput.value) || 0;
+                
+                if (quantity > 0 && price > 0 && !totalCell.classList.contains('cancelled-item')) {
+                    total += price * quantity;
                 }
             }
             document.getElementById('total-amount').textContent = total.toLocaleString();
@@ -696,12 +768,19 @@
 
             const orders = [];
             for (let i = 0; i < 8; i++) {
+                const nameInput = document.querySelector(`.name-input[data-row="${i}"]`);
                 const qtyInput = document.querySelector(`.qty-input[data-row="${i}"]`);
-                if (selectedItems[i] && qtyInput.value) {
+                const priceInput = document.querySelector(`.price-input[data-row="${i}"]`);
+                
+                const name = nameInput.value.trim();
+                const quantity = parseInt(qtyInput.value) || 0;
+                const price = parseInt(priceInput.value) || 0;
+                
+                if (name && quantity > 0 && price > 0) {
                     orders.push({
-                        name: selectedItems[i].name,
-                        quantity: parseInt(qtyInput.value),
-                        price: selectedItems[i].price,
+                        name: name,
+                        quantity: quantity,
+                        price: price,
                         cancelled: false
                     });
                 }
@@ -728,11 +807,13 @@
             // 選択アイテムをクリア
             selectedItems = new Array(8).fill(null);
             
+            // 履歴行を削除
+            document.querySelectorAll('.history-row').forEach(row => row.remove());
+            
             // 入力フィールドをクリア・有効化
             document.querySelectorAll('.name-input').forEach(input => {
                 input.value = '';
                 input.disabled = false;
-                // 取り消し線とスタイルをクリア
                 input.style.textDecoration = '';
                 input.style.color = '';
             });
@@ -740,18 +821,22 @@
             document.querySelectorAll('.qty-input').forEach(input => {
                 input.value = '';
                 input.disabled = false;
-                // 取り消し線とスタイルをクリア
                 input.style.textDecoration = '';
                 input.style.color = '';
             });
             
-            // 価格セルをクリア
-            document.querySelectorAll('[id^="price-"]').forEach(cell => {
+            document.querySelectorAll('.price-input').forEach(input => {
+                input.value = '';
+                input.disabled = false;
+                input.style.textDecoration = '';
+                input.style.color = '';
+            });
+            
+            // 小計セルをクリア
+            document.querySelectorAll('[id^="total-"]').forEach(cell => {
                 cell.textContent = '';
-                // 取り消し線とスタイルをクリア
                 cell.style.textDecoration = '';
                 cell.style.color = '';
-                // 取消リンクも削除
                 const cancelLink = cell.querySelector('.cancel-link');
                 if (cancelLink) {
                     cancelLink.remove();
