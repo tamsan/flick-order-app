@@ -278,6 +278,29 @@
             background: #8B4513;
             color: white;
         }
+
+        .status-message {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1001;
+            display: none;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
     </style>
 </head>
 <body>
@@ -314,6 +337,9 @@
         </div>
     </div>
 
+    <!-- ステータスメッセージ表示用 -->
+    <div id="status-message" class="status-message"></div>
+
     <script>
         const menuData = [
             { name: "ビールアサヒ", price: 600, kana: "びーるあさひ" },
@@ -349,7 +375,6 @@
         ];
 
         let orderRows = [];
-        let confirmedOrders = [];
 
         // 32行の注文行を初期化
         function initializeOrderRows() {
@@ -562,7 +587,51 @@
             document.getElementById('total-amount').textContent = total.toLocaleString();
         }
 
-        function handleOrderConfirm() {
+        // Supabase連携: 注文をサーバーに保存
+        async function saveOrderToServer(orderData) {
+            try {
+                showStatusMessage('注文を送信中...', 'success');
+                
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(orderData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log('注文保存成功:', result);
+                    showStatusMessage('注文が正常に保存されました！', 'success');
+                    return true;
+                } else {
+                    console.error('注文保存エラー:', result.error);
+                    showStatusMessage('注文保存でエラーが発生しました', 'error');
+                    return false;
+                }
+            } catch (error) {
+                console.error('通信エラー:', error);
+                showStatusMessage('サーバー通信エラーが発生しました', 'error');
+                return false;
+            }
+        }
+
+        // ステータスメッセージ表示
+        function showStatusMessage(message, type) {
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // 注文確定処理（Supabase連携版）
+        async function handleOrderConfirm() {
             const tableNumber = document.getElementById('table-select').value;
             if (!tableNumber) {
                 alert('テーブル番号を選択してください');
@@ -572,31 +641,15 @@
             const newOrders = [];
             const orderId = Date.now();
 
-            // アクティブな行で入力されているものを確定
+            // アクティブな行で入力されているものを収集
             orderRows.forEach((row, index) => {
                 if (row.status === 'active' && row.name && row.quantity && row.price) {
-                    row.status = 'confirmed';
-                    row.orderId = orderId;
                     newOrders.push({
                         name: row.name,
                         quantity: parseInt(row.quantity),
-                        price: parseInt(row.price)
+                        price: parseInt(row.price),
+                        status: 'confirmed'
                     });
-                    
-                    // 行をグレー化し、アクションリンクを追加
-                    const rowElement = document.getElementById(`order-row-${index}`);
-                    rowElement.classList.add('confirmed');
-                    
-                    // 入力フィールドを無効化
-                    const inputs = rowElement.querySelectorAll('.editable-cell');
-                    inputs.forEach(input => input.disabled = true);
-                    
-                    // アクションリンクを追加
-                    const actionsDiv = document.getElementById(`actions-${index}`);
-                    actionsDiv.innerHTML = `
-                        <span class="action-link" onclick="editQuantity(${index})">変更</span>
-                        <span class="action-link" onclick="cancelOrder(${index})">取消</span>
-                    `;
                 }
             });
 
@@ -605,22 +658,43 @@
                 return;
             }
 
-            // 確定された注文を記録
-            confirmedOrders.push({
-                id: orderId,
-                tableNumber: tableNumber,
-                orders: newOrders,
-                timestamp: new Date(),
-                status: 'confirmed'
-            });
+            // Supabaseに注文データを保存
+            const orderData = {
+                table_number: parseInt(tableNumber),
+                order_rows: newOrders
+            };
 
-            // ローカルストレージに保存
-            localStorage.setItem('confirmedOrders', JSON.stringify(confirmedOrders));
-
-            alert(`テーブル${tableNumber}の注文を確定しました！\n${newOrders.length}品目の注文`);
+            const saveSuccess = await saveOrderToServer(orderData);
             
-            // 次の空行に自動フォーカス
-            focusNextEmptyRow();
+            if (saveSuccess) {
+                // 保存成功時のみUI更新
+                orderRows.forEach((row, index) => {
+                    if (row.status === 'active' && row.name && row.quantity && row.price) {
+                        row.status = 'confirmed';
+                        row.orderId = orderId;
+                        
+                        // 行をグレー化し、アクションリンクを追加
+                        const rowElement = document.getElementById(`order-row-${index}`);
+                        rowElement.classList.add('confirmed');
+                        
+                        // 入力フィールドを無効化
+                        const inputs = rowElement.querySelectorAll('.editable-cell');
+                        inputs.forEach(input => input.disabled = true);
+                        
+                        // アクションリンクを追加
+                        const actionsDiv = document.getElementById(`actions-${index}`);
+                        actionsDiv.innerHTML = `
+                            <span class="action-link" onclick="editQuantity(${index})">変更</span>
+                            <span class="action-link" onclick="cancelOrder(${index})">取消</span>
+                        `;
+                    }
+                });
+
+                alert(`テーブル${tableNumber}の注文を確定しました！\n${newOrders.length}品目の注文`);
+                
+                // 次の空行に自動フォーカス
+                focusNextEmptyRow();
+            }
         }
 
         function focusNextEmptyRow() {
@@ -648,10 +722,6 @@
                 const qtyInput = document.querySelector(`.qty-input[data-row="${rowIndex}"]`);
                 qtyInput.value = newQty;
                 updateTotalAmount();
-                
-                // 確定済み注文データも更新
-                updateConfirmedOrderData(row.orderId, rowIndex, { quantity: parseInt(newQty) });
-                
                 alert('数量を変更しました');
             }
         }
@@ -670,19 +740,7 @@
                 actionsDiv.innerHTML = '<span style="color: #999; font-size: 9px;">取消済</span>';
                 
                 updateTotalAmount();
-                
-                // 確定済み注文データも更新
-                updateConfirmedOrderData(row.orderId, rowIndex, { status: 'cancelled' });
-                
                 alert('商品を取消しました');
-            }
-        }
-
-        function updateConfirmedOrderData(orderId, rowIndex, updates) {
-            const orderIndex = confirmedOrders.findIndex(order => order.id === orderId);
-            if (orderIndex !== -1) {
-                // 実際の実装では、ここでサーバーにも更新を送信
-                localStorage.setItem('confirmedOrders', JSON.stringify(confirmedOrders));
             }
         }
 
@@ -695,19 +753,10 @@
             alert('会計機能は今回のテスト範囲外です。\n将来的にSquareレジシステムと連携予定です。');
         }
 
-        function loadConfirmedOrders() {
-            const saved = localStorage.getItem('confirmedOrders');
-            if (saved) {
-                confirmedOrders = JSON.parse(saved);
-                // 確定済み注文の復元（簡略化）
-            }
-        }
-
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
             initializeOrderRows();
             setupEventListeners();
-            loadConfirmedOrders();
             updateTotalAmount();
         });
 
