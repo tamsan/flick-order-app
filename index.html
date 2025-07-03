@@ -82,6 +82,11 @@
             color: #666;
         }
 
+        .order-row.modified {
+            background: #fff3cd;
+            border-left: 3px solid #856404;
+        }
+
         .order-row.cancelled {
             background: #f0f0f0;
             color: #999;
@@ -301,6 +306,45 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
+        /* 直接編集可能な数量セル */
+        .qty-display {
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 2px;
+            min-width: 30px;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .qty-display:hover {
+            background: rgba(139, 69, 19, 0.1);
+        }
+
+        .qty-edit-input {
+            width: 40px;
+            text-align: center;
+            border: 1px solid #8B4513;
+            border-radius: 2px;
+            padding: 2px;
+            font-size: 14px;
+            font-family: 'MS Gothic', monospace;
+        }
+
+        .cancel-link {
+            color: #dc3545;
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 10px;
+            padding: 4px 3px;
+            margin: 2px 0;
+            display: block;
+        }
+
+        .cancel-link:hover {
+            background: #dc3545;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -389,7 +433,7 @@
                     name: '',
                     quantity: '',
                     price: '',
-                    status: 'active', // active, confirmed, cancelled
+                    status: 'active', // active, confirmed, modified, cancelled
                     orderId: null
                 });
             }
@@ -502,6 +546,13 @@
             value = value.replace(/[^0-9]/g, '');
             input.value = value;
             orderRows[rowIndex].quantity = value;
+            
+            // 確定済みの行で数量が変更された場合、modified状態にする
+            if (orderRows[rowIndex].status === 'confirmed' && value !== '') {
+                orderRows[rowIndex].status = 'modified';
+                document.getElementById(`order-row-${rowIndex}`).classList.add('modified');
+            }
+            
             updateRowTotal(rowIndex);
         }
 
@@ -587,6 +638,51 @@
             document.getElementById('total-amount').textContent = total.toLocaleString();
         }
 
+        // 数量の直接編集機能
+        function makeQuantityEditable(rowIndex) {
+            const qtyCell = document.querySelector(`#order-row-${rowIndex} .col-qty`);
+            const currentQty = orderRows[rowIndex].quantity;
+            
+            qtyCell.innerHTML = `
+                <input type="text" class="qty-edit-input" value="${currentQty}" 
+                       onblur="finishQuantityEdit(${rowIndex})" 
+                       onkeypress="handleQuantityEditKeypress(event, ${rowIndex})"
+                       autofocus>
+            `;
+            
+            const input = qtyCell.querySelector('.qty-edit-input');
+            input.select();
+        }
+
+        function finishQuantityEdit(rowIndex) {
+            const input = document.querySelector(`#order-row-${rowIndex} .qty-edit-input`);
+            let newQty = input.value.replace(/[^0-9]/g, '');
+            
+            if (newQty === '' || parseInt(newQty) <= 0) {
+                newQty = orderRows[rowIndex].quantity; // 元の値に戻す
+            }
+            
+            orderRows[rowIndex].quantity = newQty;
+            
+            // 確定済みの行で数量が変更された場合、modified状態にする
+            if (orderRows[rowIndex].status === 'confirmed') {
+                orderRows[rowIndex].status = 'modified';
+                document.getElementById(`order-row-${rowIndex}`).classList.add('modified');
+            }
+            
+            // 表示を元に戻す
+            const qtyCell = document.querySelector(`#order-row-${rowIndex} .col-qty`);
+            qtyCell.innerHTML = `<span class="qty-display" onclick="makeQuantityEditable(${rowIndex})">${newQty}</span>`;
+            
+            updateTotalAmount();
+        }
+
+        function handleQuantityEditKeypress(event, rowIndex) {
+            if (event.key === 'Enter') {
+                finishQuantityEdit(rowIndex);
+            }
+        }
+
         // Supabase連携: 注文をサーバーに保存
         async function saveOrderToServer(orderData) {
             try {
@@ -604,7 +700,7 @@
                 
                 if (result.success) {
                     console.log('注文保存成功:', result);
-                    showStatusMessage('注文が正常に保存されました！', 'success');
+                    showStatusMessage('注文が正常に保存されました', 'success');
                     return true;
                 } else {
                     console.error('注文保存エラー:', result.error);
@@ -630,21 +726,31 @@
             }, 3000);
         }
 
-        // 注文確定処理（Supabase連携版）
+        // 注文確定処理（新規注文と変更注文の統合版）
         async function handleOrderConfirm() {
             const tableNumber = document.getElementById('table-select').value;
             if (!tableNumber) {
-                alert('テーブル番号を選択してください');
+                showStatusMessage('テーブル番号を選択してください', 'error');
                 return;
             }
 
             const newOrders = [];
+            const modifiedOrders = [];
             const orderId = Date.now();
 
-            // アクティブな行で入力されているものを収集
+            // 新規注文と変更注文を分けて収集
             orderRows.forEach((row, index) => {
                 if (row.status === 'active' && row.name && row.quantity && row.price) {
+                    // 新規注文
                     newOrders.push({
+                        name: row.name,
+                        quantity: parseInt(row.quantity),
+                        price: parseInt(row.price),
+                        status: 'confirmed'
+                    });
+                } else if (row.status === 'modified' && row.name && row.quantity && row.price) {
+                    // 変更注文
+                    modifiedOrders.push({
                         name: row.name,
                         quantity: parseInt(row.quantity),
                         price: parseInt(row.price),
@@ -653,15 +759,17 @@
                 }
             });
 
-            if (newOrders.length === 0) {
-                alert('注文商品を入力してください');
+            const allOrders = [...newOrders, ...modifiedOrders];
+
+            if (allOrders.length === 0) {
+                showStatusMessage('注文商品を入力してください', 'error');
                 return;
             }
 
             // Supabaseに注文データを保存
             const orderData = {
                 table_number: parseInt(tableNumber),
-                order_rows: newOrders
+                order_rows: allOrders
             };
 
             const saveSuccess = await saveOrderToServer(orderData);
@@ -669,29 +777,33 @@
             if (saveSuccess) {
                 // 保存成功時のみUI更新
                 orderRows.forEach((row, index) => {
-                    if (row.status === 'active' && row.name && row.quantity && row.price) {
+                    if ((row.status === 'active' || row.status === 'modified') && row.name && row.quantity && row.price) {
                         row.status = 'confirmed';
                         row.orderId = orderId;
                         
-                        // 行をグレー化し、アクションリンクを追加
+                        // 行をグレー化
                         const rowElement = document.getElementById(`order-row-${index}`);
+                        rowElement.classList.remove('modified');
                         rowElement.classList.add('confirmed');
                         
-                        // 入力フィールドを無効化
-                        const inputs = rowElement.querySelectorAll('.editable-cell');
-                        inputs.forEach(input => input.disabled = true);
+                        // 入力フィールドを無効化し、数量をクリック可能に変更
+                        const nameInput = rowElement.querySelector('.name-input');
+                        const priceInput = rowElement.querySelector('.price-input');
+                        nameInput.disabled = true;
+                        priceInput.disabled = true;
+                        
+                        // 数量をクリック可能に変更
+                        const qtyCell = rowElement.querySelector('.col-qty');
+                        qtyCell.innerHTML = `<span class="qty-display" onclick="makeQuantityEditable(${index})">${row.quantity}</span>`;
                         
                         // アクションリンクを追加
                         const actionsDiv = document.getElementById(`actions-${index}`);
                         actionsDiv.innerHTML = `
-                            <span class="action-link" onclick="editQuantity(${index})">変更</span>
-                            <span class="action-link" onclick="cancelOrder(${index})">取消</span>
+                            <span class="cancel-link" onclick="cancelOrder(${index})">取消</span>
                         `;
                     }
                 });
 
-                alert(`テーブル${tableNumber}の注文を確定しました！\n${newOrders.length}品目の注文`);
-                
                 // 次の空行に自動フォーカス
                 focusNextEmptyRow();
             }
@@ -701,28 +813,13 @@
             for (let i = 0; i < orderRows.length; i++) {
                 if (orderRows[i].status === 'active' && !orderRows[i].name) {
                     const nameInput = document.querySelector(`.name-input[data-row="${i}"]`);
-                    if (nameInput) {
+                    if (nameInput && !nameInput.disabled) {
                         nameInput.focus();
                         // 行が見えるようにスクロール
                         nameInput.closest('.order-row').scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                     break;
                 }
-            }
-        }
-
-        function editQuantity(rowIndex) {
-            const row = orderRows[rowIndex];
-            const currentQty = row.quantity;
-            
-            const newQty = prompt(`数量を変更してください（現在: ${currentQty}）`, currentQty);
-            
-            if (newQty !== null && newQty !== '' && !isNaN(newQty) && parseInt(newQty) > 0) {
-                row.quantity = newQty;
-                const qtyInput = document.querySelector(`.qty-input[data-row="${rowIndex}"]`);
-                qtyInput.value = newQty;
-                updateTotalAmount();
-                alert('数量を変更しました');
             }
         }
 
@@ -740,7 +837,7 @@
                 actionsDiv.innerHTML = '<span style="color: #999; font-size: 9px;">取消済</span>';
                 
                 updateTotalAmount();
-                alert('商品を取消しました');
+                showStatusMessage('商品を取消しました', 'success');
             }
         }
 
@@ -750,7 +847,7 @@
 
         function handleCheckout() {
             // 将来的にSquare APIとの連携予定
-            alert('会計機能は今回のテスト範囲外です。\n将来的にSquareレジシステムと連携予定です。');
+            showStatusMessage('会計機能は今回のテスト範囲外です', 'error');
         }
 
         // 初期化
@@ -761,7 +858,9 @@
         });
 
         // グローバル関数として公開
-        window.editQuantity = editQuantity;
+        window.makeQuantityEditable = makeQuantityEditable;
+        window.finishQuantityEdit = finishQuantityEdit;
+        window.handleQuantityEditKeypress = handleQuantityEditKeypress;
         window.cancelOrder = cancelOrder;
     </script>
 </body>
